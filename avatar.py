@@ -2,69 +2,51 @@ import cv2
 import numpy as np
 from PIL import Image
 
-image_path = 'avatar.png'
-image = cv2.imread(image_path)
+def detect_and_mask_faces(image_path):
+    image = cv2.imread(image_path)
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    
+    mask = np.zeros_like(image)
+    
+    for (x, y, w, h) in faces:
+        center = (x + w // 2, y + h // 2)
+        radius = max(w, h) // 2
+        cv2.circle(mask, center, radius, (255, 255, 255), -1)
+    
+    result = cv2.bitwise_and(image, mask)
+    return result
 
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+def save_image(image, output_path):
+    cv2.imwrite(output_path, image)
 
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-# Detect faces
-faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-
-mask = np.zeros_like(image)
-
-for (x, y, w, h) in faces:
-    center = (x + w // 2, y + h // 2)
-    radius = max(w, h) // 2
-    cv2.circle(mask, center, radius, (255, 255, 255), -1)
-
-result = cv2.bitwise_and(image, mask)
-
-output_path = 'path_to_save_image.png'
-cv2.imwrite(output_path, result)
-
-def convertImage(output_path):
-    img = Image.open(output_path)
+def convert_image_to_rgba(input_path, output_path):
+    img = Image.open(input_path)
     img = img.convert("RGBA")
- 
     datas = img.getdata()
- 
-    newData = []
- 
-    for item in datas:
-        if item[0] == 0 and item[1] == 0 and item[2] == 0:
-            newData.append((255, 255, 255, 0))
-        else:
-            newData.append(item)
- 
-    img.putdata(newData)
-    img.save("./New.png", "PNG")
-    print("Successful")
-    
-def resize_image(input_image_path, output_image_path, size):
-    original_image = Image.open(input_image_path)
-    width, height = original_image.size
-    print(f"The original image size is {width} wide x {height} high")
+    new_data = [(255, 255, 255, 0) if item[0] == 0 and item[1] == 0 and item[2] == 0 else item for item in datas]
+    img.putdata(new_data)
+    img.save(output_path, "PNG")
+    print("Image conversion to RGBA completed successfully.")
 
+def resize_image(input_path, output_path, size):
+    original_image = Image.open(input_path)
     resized_image = original_image.resize(size)
-    width, height = resized_image.size
-    print(f"The resized image size is {width} wide x {height} high")
+    resized_image.save(output_path)
+    print(f"Image resized to {size} and saved to {output_path}.")
 
-    resized_image.save(output_image_path)
+if __name__ == "__main__":
+    input_image_path = 'avatar.png'
+    masked_image_path = 'masked_image.png'
+    resized_image_path = 'resized_image.png'
+    final_image_path = 'final_image.png'
     
-input_image = 'avatar.png' 
-output_image = 'resized_image.png'
-size = (512, 512)
-
-resize_image(output_path, output_image, size)
-convertImage(output_image)
-
-# 
-# def make_badge(outpath):
-    # return output_path
-# image_path = './avatar.png'
-# badge = make_badge(image_path)
-# transparentImage = convertImage(badge)
-# resized_image = resize_image(transparentImage)
-# validate(resize_image)
+    masked_image = detect_and_mask_faces(input_image_path)
+    save_image(masked_image, masked_image_path)
+    
+    resize_size = (512, 512)
+    resize_image(masked_image_path, resized_image_path, resize_size)
+    
+    convert_image_to_rgba(resized_image_path, final_image_path)

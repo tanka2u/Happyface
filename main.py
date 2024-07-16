@@ -6,16 +6,16 @@ def is_within_circle(x, y, center, radius):
 
 def is_happy_color(rgb):
     r, g, b = rgb
-    return r > 150 and g > 150 and b > 100 # my happy criteria
+    return r > 150 and g > 150 and b > 100
 
 def validate_badge(image_path):
     try:
         image = Image.open(image_path).convert("RGBA")
         
-        if image.size != (512, 512): # checking size
+        if image.size != (512, 512): 
             return False, "Image size is not 512x512"
 
-        data = np.array(image) # Get image data
+        data = np.array(image) 
         height, width, _ = data.shape
         center = height // 2
         radius = center
@@ -32,5 +32,5 @@ def validate_badge(image_path):
     except Exception as e:
         return False, str(e)
 
-valid, message = validate_badge("./New.png")
+valid, message = validate_badge("./happy.png")
 print(message)
